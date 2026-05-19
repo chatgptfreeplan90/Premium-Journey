@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Dashboard — NEXUS</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ink: #0A0A0F;
+    --cream: #F5F0E8;
+    --electric: #FF3D00;
+    --gold: #FFB800;
+    --violet: #6C00FF;
+    --white: #FFFFFF;
+    --muted: #7A7880;
+    --border: rgba(10,10,15,0.10);
+    --sidebar-w: 240px;
+  }
+
+  html, body { min-height: 100vh; font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--ink); overflow-x: hidden; }
+
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(rgba(10,10,15,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(10,10,15,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none; z-index: 0;
+  }
+
+  .blob { position: fixed; border-radius: 50%; filter: blur(90px); opacity: 0.18; pointer-events: none; z-index: 0; }
+  .blob-1 { width: 500px; height: 500px; background: var(--electric); top: -100px; right: -80px; }
+  .blob-2 { width: 400px; height: 400px; background: var(--violet); bottom: -80px; left: 200px; }
+  .blob-3 { width: 280px; height: 280px; background: var(--gold); top: 50%; left: 45%; }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    position: fixed; top: 0; left: 0; bottom: 0;
+    width: var(--sidebar-w);
+    background: var(--ink);
+    display: flex; flex-direction: column;
+    z-index: 100;
+    overflow: hidden;
+  }
+  .sidebar::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(255,255,255,0.015) 2px, rgba(255,255,255,0.015) 4px);
+    pointer-events: none;
+  }
+
+  .sidebar-brand {
+    padding: 28px 24px 24px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 800; font-size: 20px;
+    color: var(--white);
+    display: flex; align-items: center; gap: 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+  }
+  .brand-dot { width: 9px; height: 9px; background: var(--electric); border-radius: 50%; animation: pulse 2s ease-in-out infinite; flex-shrink: 0; }
+  @keyframes pulse { 0%,100%{transform:scale(1);opacity:1;} 50%{transform:scale(1.5);opacity:0.5;} }
+
+  .sidebar-nav { flex: 1; padding: 20px 12px; display: flex; flex-direction: column; gap: 4px; position: relative; z-index: 1; }
+
+  .nav-section-label {
+    font-size: 10px; font-weight: 500; text-transform: uppercase;
+    letter-spacing: 0.1em; color: rgba(255,255,255,0.25);
+    padding: 12px 12px 6px;
+  }
+
+  .nav-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    font-size: 14px; font-weight: 400;
+    color: rgba(255,255,255,0.5);
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    text-decoration: none;
+  }
+  .nav-item:hover { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.85); }
+  .nav-item.active { background: var(--electric); color: var(--white); font-weight: 500; }
+  .nav-item .nav-icon { font-size: 17px; width: 20px; text-align: center; flex-shrink: 0; }
+  .nav-badge {
+    margin-left: auto; font-size: 10px; font-weight: 600;
+    background: var(--gold); color: var(--ink);
+    padding: 2px 7px; border-radius: 10px;
+  }
+  .nav-item.active .nav-badge { background: rgba(255,255,255,0.25); color: var(--white); }
+
+  .sidebar-footer {
+    padding: 16px 12px;
+    border-top: 1px solid rgba(255,255,255,0.07);
+    position: relative; z-index: 1;
+  }
+  .user-card {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.05);
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .user-card:hover { background: rgba(255,255,255,0.09); }
+  .user-avatar {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: var(--electric);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Syne', sans-serif;
+    font-weight: 800; font-size: 13px; color: var(--white);
+    flex-shrink: 0;
+  }
+  .user-info { flex: 1; min-width: 0; }
+  .user-name { font-size: 13px; font-weight: 500; color: var(--white); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .user-role { font-size: 11px; color: rgba(255,255,255,0.35); }
+  .user-card .chevron { font-size: 12px; color: rgba(255,255,255,0.3); }
+
+  /* ── Main ── */
+  .main {
+    margin-left: var(--sidebar-w);
+    min-height: 100vh;
+    position: relative; z-index: 1;
+  }
+
+  /* ── Topbar ── */
+  .topbar {
+    position: sticky; top: 0;
+    background: rgba(245,240,232,0.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    height: 64px;
+    display: flex; align-items: center; justify-content: space-between;
+    z-index: 50;
+  }
+  .topbar-left { display: flex; flex-direction: column; }
+  .topbar-left h1 { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 20px; letter-spacing: -0.5px; color: var(--ink); }
+  .topbar-left p { font-size: 12px; color: var(--muted); }
+
+  .topbar-right { display: flex; align-items: center; gap: 12px; }
+  .top-btn {
+    width: 38px; height: 38px;
+    border-radius: 10px;
+    border: 1.5px solid var(--border);
+    background: var(--white);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; cursor: pointer;
+    transition: all 0.2s; position: relative;
+  }
+  .top-btn:hover { border-color: var(--ink); }
+  .notif-dot { position: absolute; top: 6px; right: 6px; width: 7px; height: 7px; background: var(--electric); border-radius: 50%; border: 1.5px solid var(--cream); }
+
+  .search-bar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    background: var(--white);
+    font-size: 13px; color: var(--muted);
+    cursor: text; transition: border-color 0.2s;
+    min-width: 180px;
+  }
+  .search-bar:hover { border-color: rgba(10,10,15,0.25); }
+
+  /* ── Content ── */
+  .content { padding: 28px 32px; }
+
+  /* ── Metric cards ── */
+  .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+  .metric-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    animation: fadeUp 0.5s ease both;
+  }
+  .metric-card:nth-child(2) { animation-delay: 0.08s; }
+  .metric-card:nth-child(3) { animation-delay: 0.16s; }
+  .metric-card:nth-child(4) { animation-delay: 0.24s; }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(16px);} to{opacity:1;transform:translateY(0);} }
+
+  .metric-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  }
+  .metric-card.c1::before { background: var(--electric); }
+  .metric-card.c2::before { background: var(--gold); }
+  .metric-card.c3::before { background: var(--violet); }
+  .metric-card.c4::before { background: #00C896; }
+
+  .metric-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .metric-icon { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .metric-icon.i1 { background: rgba(255,61,0,0.1); }
+  .metric-icon.i2 { background: rgba(255,184,0,0.1); }
+  .metric-icon.i3 { background: rgba(108,0,255,0.1); }
+  .metric-icon.i4 { background: rgba(0,200,150,0.1); }
+  .metric-change { font-size: 12px; font-weight: 500; padding: 3px 8px; border-radius: 20px; }
+  .metric-change.up { background: rgba(59,109,17,0.1); color: #3B6D11; }
+  .metric-change.down { background: rgba(163,45,45,0.1); color: #A32D2D; }
+
+  .metric-val { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 30px; letter-spacing: -1px; color: var(--ink); margin-bottom: 4px; }
+  .metric-label { font-size: 12px; color: var(--muted); }
+
+  /* ── Charts row ── */
+  .charts-row { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 24px; }
+
+  .panel {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 22px;
+    animation: fadeUp 0.5s ease 0.3s both;
+  }
+  .panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .panel-title { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 15px; letter-spacing: -0.3px; color: var(--ink); }
+  .panel-action {
+    font-size: 12px; color: var(--electric); font-weight: 500; cursor: pointer;
+    border: none; background: none; padding: 0;
+  }
+
+  /* Bar chart */
+  .bar-chart { display: flex; align-items: flex-end; gap: 10px; height: 140px; }
+  .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .bar-outer { width: 100%; background: rgba(10,10,15,0.05); border-radius: 6px; flex: 1; display: flex; align-items: flex-end; overflow: hidden; }
+  .bar-inner { width: 100%; border-radius: 6px; transition: height 0.8s cubic-bezier(0.34,1.2,0.64,1); }
+  .bar-lbl { font-size: 10px; color: var(--muted); }
+
+  /* Donut chart */
+  .donut-wrap { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+  .donut-svg { width: 120px; height: 120px; }
+  .donut-legend { width: 100%; display: flex; flex-direction: column; gap: 8px; }
+  .legend-row { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ink); }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .legend-pct { margin-left: auto; font-weight: 600; font-size: 12px; color: var(--muted); }
+
+  /* ── Bottom row ── */
+  .bottom-row { display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px; }
+
+  /* Table */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th {
+    text-align: left; padding: 0 0 12px;
+    font-size: 11px; font-weight: 500; text-transform: uppercase;
+    letter-spacing: 0.07em; color: var(--muted);
+    border-bottom: 1px solid var(--border);
+  }
+  tbody tr { border-bottom: 1px solid var(--border); transition: background 0.15s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: rgba(10,10,15,0.02); }
+  tbody td { padding: 12px 0; color: var(--ink); vertical-align: middle; }
+  .td-name { display: flex; align-items: center; gap: 10px; }
+  .td-avatar { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 11px; color: var(--white); flex-shrink: 0; }
+  .status-pill { font-size: 11px; font-weight: 500; padding: 3px 10px; border-radius: 20px; }
+  .status-pill.active { background: rgba(59,109,17,0.1); color: #3B6D11; }
+  .status-pill.pending { background: rgba(255,184,0,0.15); color: #854F0B; }
+  .status-pill.inactive { background: rgba(10,10,15,0.07); color: var(--muted); }
+
+  /* Activity feed */
+  .feed { display: flex; flex-direction: column; gap: 0; }
+  .feed-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); position: relative; }
+  .feed-item:last-child { border-bottom: none; padding-bottom: 0; }
+  .feed-icon { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; margin-top: 1px; }
+  .feed-icon.fi-r { background: rgba(255,61,0,0.1); }
+  .feed-icon.fi-g { background: rgba(59,109,17,0.1); }
+  .feed-icon.fi-y { background: rgba(255,184,0,0.1); }
+  .feed-icon.fi-v { background: rgba(108,0,255,0.1); }
+  .feed-body { flex: 1; }
+  .feed-title { font-size: 13px; color: var(--ink); line-height: 1.4; margin-bottom: 2px; }
+  .feed-title strong { font-weight: 500; }
+  .feed-time { font-size: 11px; color: var(--muted); }
+
+  /* ── Quick actions bar ── */
+  .quick-bar {
+    display: flex; gap: 12px; margin-bottom: 24px;
+    animation: fadeUp 0.5s ease 0.1s both;
+  }
+  .qbtn {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 18px;
+    border-radius: 10px;
+    font-size: 13px; font-weight: 500;
+    cursor: pointer; border: none;
+    transition: all 0.2s;
+  }
+  .qbtn.primary { background: var(--ink); color: var(--white); }
+  .qbtn.primary:hover { background: var(--electric); }
+  .qbtn.secondary { background: var(--white); color: var(--ink); border: 1.5px solid var(--border); }
+  .qbtn.secondary:hover { border-color: var(--ink); }
+
+  /* ── Responsive ── */
+  @media (max-width: 1100px) {
+    .metrics { grid-template-columns: repeat(2, 1fr); }
+    .charts-row { grid-template-columns: 1fr; }
+    .bottom-row { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 768px) {
+    :root { --sidebar-w: 0px; }
+    .sidebar { display: none; }
+    .main { margin-left: 0; }
+    .topbar, .content { padding-left: 16px; padding-right: 16px; }
+    .metrics { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="blob blob-1"></div>
+<div class="blob blob-2"></div>
+<div class="blob blob-3"></div>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <span class="brand-dot"></span>
+    NEXUS
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Main</div>
+    <a class="nav-item active" href="#">
+      <span class="nav-icon">⊞</span> Dashboard
+    </a>
+    <a class="nav-item" href="#">
+      <span class="nav-icon">📊</span> Analytics
+    </a>
+    <a class="nav-item" href="#">
+      <span class="nav-icon">👥</span> Users
+      <span class="nav-badge">12</span>
+    </a>
+    <a class="nav-item" href="#">
+      <span class="nav-icon">📁</span> Projects
+    </a>
+
+    <div class="nav-section-label" style="margin-top:8px;">Workspace</div>
+    <a class="nav-item" href="#">
+      <span class="nav-icon">✉️</span> Messages
+      <span class="nav-badge">5</span>
+    </a>
+    <a class="nav-item" href="#">
+      <span class="nav-icon">📅</span> Calendar
+    </a>
+    <a class="nav-item" href="#">
+      <span class="nav-icon">🔔</span> Notifications
+    </a>
+
+    <div class="nav-section-label" style="margin-top:8px;">Settings</div>
+    <a class="nav-item" href="#">
+      <span class="nav-icon">⚙️</span> Settings
+    </a>
+    <a class="nav-item" href="#">
+      <span class="nav-icon">🔒</span> Security
+    </a>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="user-card">
+      <div class="user-avatar">AA</div>
+      <div class="user-info">
+        <div class="user-name">Ahmed Ali</div>
+        <div class="user-role">Admin</div>
+      </div>
+      <span class="chevron">⌄</span>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <h1>Good morning, Ahmed 👋</h1>
+      <p>Tuesday, 19 May 2026</p>
+    </div>
+    <div class="topbar-right">
+      <div class="search-bar">🔍 Search...</div>
+      <div class="top-btn">🔔<span class="notif-dot"></span></div>
+      <div class="top-btn">⚙️</div>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="content">
+
+    <!-- Quick actions -->
+    <div class="quick-bar">
+      <button class="qbtn primary">＋ New Project</button>
+      <button class="qbtn secondary">⬆ Import Data</button>
+      <button class="qbtn secondary">📤 Export Report</button>
+    </div>
+
+    <!-- Metrics -->
+    <div class="metrics">
+      <div class="metric-card c1">
+        <div class="metric-top">
+          <div class="metric-icon i1">👥</div>
+          <span class="metric-change up">↑ 12%</span>
+        </div>
+        <div class="metric-val">24,812</div>
+        <div class="metric-label">Total Users</div>
+      </div>
+      <div class="metric-card c2">
+        <div class="metric-top">
+          <div class="metric-icon i2">💰</div>
+          <span class="metric-change up">↑ 8.4%</span>
+        </div>
+        <div class="metric-val">$94.2K</div>
+        <div class="metric-label">Revenue</div>
+      </div>
+      <div class="metric-card c3">
+        <div class="metric-top">
+          <div class="metric-icon i3">📁</div>
+          <span class="metric-change down">↓ 2.1%</span>
+        </div>
+        <div class="metric-val">1,340</div>
+        <div class="metric-label">Active Projects</div>
+      </div>
+      <div class="metric-card c4">
+        <div class="metric-top">
+          <div class="metric-icon i4">⭐</div>
+          <span class="metric-change up">↑ 0.3</span>
+        </div>
+        <div class="metric-val">4.87</div>
+        <div class="metric-label">Avg. Rating</div>
+      </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="charts-row">
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Weekly Visitors</span>
+          <button class="panel-action">View all →</button>
+        </div>
+        <div class="bar-chart" id="barChart"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Traffic Sources</span>
+        </div>
+        <div class="donut-wrap">
+          <svg class="donut-svg" viewBox="0 0 120 120">
+            <circle cx="60" cy="60" r="48" fill="none" stroke="#f0ece3" stroke-width="16"/>
+            <circle cx="60" cy="60" r="48" fill="none" stroke="#FF3D00" stroke-width="16"
+              stroke-dasharray="216 86" stroke-dashoffset="0" stroke-linecap="round"
+              style="transform:rotate(-90deg);transform-origin:60px 60px"/>
+            <circle cx="60" cy="60" r="48" fill="none" stroke="#FFB800" stroke-width="16"
+              stroke-dasharray="60 242" stroke-dashoffset="-216" stroke-linecap="round"
+              style="transform:rotate(-90deg);transform-origin:60px 60px"/>
+            <circle cx="60" cy="60" r="48" fill="none" stroke="#6C00FF" stroke-width="16"
+              stroke-dasharray="18 284" stroke-dashoffset="-276" stroke-linecap="round"
+              style="transform:rotate(-90deg);transform-origin:60px 60px"/>
+            <text x="60" y="55" text-anchor="middle" font-family="Syne,sans-serif" font-weight="800" font-size="16" fill="#0A0A0F">72%</text>
+            <text x="60" y="70" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="9" fill="#7A7880">Google</text>
+          </svg>
+          <div class="donut-legend">
+            <div class="legend-row"><span class="legend-dot" style="background:#FF3D00"></span>Google<span class="legend-pct">72%</span></div>
+            <div class="legend-row"><span class="legend-dot" style="background:#FFB800"></span>Direct<span class="legend-pct">20%</span></div>
+            <div class="legend-row"><span class="legend-dot" style="background:#6C00FF"></span>Social<span class="legend-pct">8%</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom -->
+    <div class="bottom-row">
+      <!-- Users table -->
+      <div class="panel" style="animation-delay:0.4s">
+        <div class="panel-header">
+          <span class="panel-title">Recent Users</span>
+          <button class="panel-action">See all →</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Role</th>
+                <th>Joined</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><div class="td-name"><div class="td-avatar" style="background:#FF3D00">AA</div>Ahmed Ali</div></td>
+                <td style="color:var(--muted)">Admin</td>
+                <td style="color:var(--muted)">Today</td>
+                <td><span class="status-pill active">Active</span></td>
+              </tr>
+              <tr>
+                <td><div class="td-name"><div class="td-avatar" style="background:#6C00FF">SK</div>Sara Khan</div></td>
+                <td style="color:var(--muted)">Editor</td>
+                <td style="color:var(--muted)">May 18</td>
+                <td><span class="status-pill active">Active</span></td>
+              </tr>
+              <tr>
+                <td><div class="td-name"><div class="td-avatar" style="background:#FFB800;color:#0A0A0F">UR</div>Usman Raza</div></td>
+                <td style="color:var(--muted)">Viewer</td>
+                <td style="color:var(--muted)">May 17</td>
+                <td><span class="status-pill pending">Pending</span></td>
+              </tr>
+              <tr>
+                <td><div class="td-name"><div class="td-avatar" style="background:#00C896">ZM</div>Zara Malik</div></td>
+                <td style="color:var(--muted)">Editor</td>
+                <td style="color:var(--muted)">May 15</td>
+                <td><span class="status-pill active">Active</span></td>
+              </tr>
+              <tr>
+                <td><div class="td-name"><div class="td-avatar" style="background:#7A7880">FQ</div>Fahad Qureshi</div></td>
+                <td style="color:var(--muted)">Viewer</td>
+                <td style="color:var(--muted)">May 12</td>
+                <td><span class="status-pill inactive">Inactive</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Activity feed -->
+      <div class="panel" style="animation-delay:0.45s">
+        <div class="panel-header">
+          <span class="panel-title">Activity Feed</span>
+          <button class="panel-action">Clear all</button>
+        </div>
+        <div class="feed">
+          <div class="feed-item">
+            <div class="feed-icon fi-r">👤</div>
+            <div class="feed-body">
+              <div class="feed-title"><strong>Ahmed Ali</strong> created a new account</div>
+              <div class="feed-time">2 minutes ago</div>
+            </div>
+          </div>
+          <div class="feed-item">
+            <div class="feed-icon fi-g">✅</div>
+            <div class="feed-body">
+              <div class="feed-title">Project <strong>Alpha</strong> marked complete</div>
+              <div class="feed-time">18 minutes ago</div>
+            </div>
+          </div>
+          <div class="feed-item">
+            <div class="feed-icon fi-y">🔔</div>
+            <div class="feed-body">
+              <div class="feed-title">Server update <strong>pending</strong> approval</div>
+              <div class="feed-time">1 hour ago</div>
+            </div>
+          </div>
+          <div class="feed-item">
+            <div class="feed-icon fi-v">📝</div>
+            <div class="feed-body">
+              <div class="feed-title">New blog post published by <strong>Sara</strong></div>
+              <div class="feed-time">3 hours ago</div>
+            </div>
+          </div>
+          <div class="feed-item">
+            <div class="feed-icon fi-r">💰</div>
+            <div class="feed-body">
+              <div class="feed-title">Revenue milestone <strong>$90K</strong> reached</div>
+              <div class="feed-time">Yesterday</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script>
+  // Bar chart
+  const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const vals = [62, 78, 55, 91, 84, 47, 69];
+  const colors = ['#FF3D00','#FFB800','#6C00FF','#00C896','#FF3D00','#FFB800','#6C00FF'];
+  const chart = document.getElementById('barChart');
+  const max = Math.max(...vals);
+  days.forEach((d, i) => {
+    const col = document.createElement('div');
+    col.className = 'bar-col';
+    col.innerHTML = `
+      <div class="bar-outer">
+        <div class="bar-inner" style="height:0%;background:${colors[i]};border-radius:6px 6px 0 0;"></div>
+      </div>
+      <span class="bar-lbl">${d}</span>
+    `;
+    chart.appendChild(col);
+    setTimeout(() => {
+      col.querySelector('.bar-inner').style.height = (vals[i] / max * 100) + '%';
+    }, 100 + i * 80);
+  });
+
+  // Nav active state
+  document.querySelectorAll('.nav-item').forEach(el => {
+    el.addEventListener('click', function(e) {
+      e.preventDefault();
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      this.classList.add('active');
+    });
+  });
+</script>
+</body>
+</html>
