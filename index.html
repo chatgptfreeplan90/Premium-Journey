@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Create Account</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ink: #0A0A0F;
+    --cream: #F5F0E8;
+    --electric: #FF3D00;
+    --gold: #FFB800;
+    --violet: #6C00FF;
+    --white: #FFFFFF;
+    --muted: #7A7880;
+    --border: rgba(10,10,15,0.12);
+  }
+
+  html, body {
+    min-height: 100vh;
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(10,10,15,0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(10,10,15,0.05) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .blob {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.25;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .blob-1 { width: 500px; height: 500px; background: var(--electric); top: -150px; right: -100px; }
+  .blob-2 { width: 400px; height: 400px; background: var(--violet); bottom: -100px; left: -80px; }
+  .blob-3 { width: 300px; height: 300px; background: var(--gold); top: 40%; left: 30%; }
+
+  .wrapper {
+    position: relative;
+    z-index: 1;
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .left {
+    background: var(--ink);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 48px;
+    position: relative;
+    overflow: hidden;
+  }
+  .left::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 2px,
+      rgba(255,255,255,0.02) 2px,
+      rgba(255,255,255,0.02) 4px
+    );
+    pointer-events: none;
+  }
+
+  .brand {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 22px;
+    color: var(--white);
+    letter-spacing: -0.5px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .brand-dot {
+    width: 10px; height: 10px;
+    background: var(--electric);
+    border-radius: 50%;
+    display: inline-block;
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%,100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.4); opacity: 0.6; }
+  }
+
+  .left-hero { position: relative; z-index: 1; }
+  .left-hero h2 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: clamp(42px, 5vw, 68px);
+    line-height: 1.0;
+    color: var(--white);
+    letter-spacing: -2px;
+    margin-bottom: 20px;
+  }
+  .left-hero h2 span { color: var(--electric); }
+  .left-hero p {
+    font-size: 16px;
+    color: rgba(255,255,255,0.5);
+    line-height: 1.7;
+    max-width: 340px;
+  }
+
+  .perks { display: flex; flex-direction: column; gap: 16px; position: relative; z-index: 1; }
+  .perk {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 18px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    animation: slideLeft 0.6s ease both;
+  }
+  .perk:nth-child(2) { animation-delay: 0.1s; }
+  .perk:nth-child(3) { animation-delay: 0.2s; }
+  @keyframes slideLeft {
+    from { opacity: 0; transform: translateX(-20px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  .perk-icon {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .perk-text { font-size: 13px; color: rgba(255,255,255,0.7); line-height: 1.4; }
+  .perk-text strong { color: var(--white); display: block; font-size: 14px; margin-bottom: 2px; }
+
+  .right {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 48px;
+  }
+
+  .form-box {
+    width: 100%;
+    max-width: 420px;
+    animation: fadeUp 0.7s ease both;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .form-header { margin-bottom: 36px; }
+  .form-header h1 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 36px;
+    letter-spacing: -1.5px;
+    color: var(--ink);
+    line-height: 1.1;
+    margin-bottom: 8px;
+  }
+  .form-header h1 em { font-style: normal; color: var(--electric); }
+  .form-header p { font-size: 14px; color: var(--muted); }
+
+  .socials { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 28px; }
+  .social-btn {
+    display: flex; align-items: center; justify-content: center;
+    gap: 8px;
+    padding: 11px 16px;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    background: var(--white);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .social-btn:hover { border-color: var(--ink); background: var(--ink); color: var(--white); }
+  .social-btn svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+  .divider {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 24px;
+    font-size: 12px; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em;
+  }
+  .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  .fields { display: flex; flex-direction: column; gap: 14px; margin-bottom: 20px; }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field label { font-size: 12px; font-weight: 500; color: var(--ink); text-transform: uppercase; letter-spacing: 0.06em; }
+
+  .input-wrap { position: relative; }
+  .input-wrap input {
+    width: 100%;
+    padding: 13px 16px 13px 44px;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    background: var(--white);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .input-wrap input::placeholder { color: #C0BDC8; }
+  .input-wrap input:focus { border-color: var(--electric); box-shadow: 0 0 0 4px rgba(255,61,0,0.08); }
+  .input-wrap .ico {
+    position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+    font-size: 17px; color: #C0BDC8; pointer-events: none;
+    transition: color 0.2s;
+  }
+  .input-wrap:focus-within .ico { color: var(--electric); }
+
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .eye-btn {
+    position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+    background: none; border: none; cursor: pointer;
+    font-size: 17px; color: #C0BDC8; padding: 0;
+    transition: color 0.2s;
+  }
+  .eye-btn:hover { color: var(--ink); }
+
+  .strength { margin-top: 6px; }
+  .strength-bar { height: 3px; border-radius: 2px; background: #E5E2DC; overflow: hidden; }
+  .strength-fill { height: 100%; width: 0; border-radius: 2px; transition: width 0.4s, background 0.4s; }
+  .strength-label { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+  .terms {
+    display: flex; align-items: flex-start; gap: 10px;
+    font-size: 12px; color: var(--muted);
+    margin-bottom: 24px; cursor: pointer;
+  }
+  .terms input[type=checkbox] { display: none; }
+  .custom-check {
+    width: 18px; height: 18px; flex-shrink: 0;
+    border: 1.5px solid var(--border);
+    border-radius: 4px; background: var(--white);
+    display: flex; align-items: center; justify-content: center;
+    margin-top: 1px;
+    transition: all 0.2s;
+  }
+  .custom-check svg { width: 10px; height: 10px; opacity: 0; transition: opacity 0.2s; }
+  .terms input[type=checkbox]:checked ~ .custom-check { background: var(--electric); border-color: var(--electric); }
+  .terms input[type=checkbox]:checked ~ .custom-check svg { opacity: 1; }
+  .terms a { color: var(--ink); font-weight: 500; text-decoration: underline; text-underline-offset: 2px; }
+
+  .submit-btn {
+    width: 100%;
+    padding: 15px;
+    background: var(--ink);
+    color: var(--white);
+    border: none;
+    border-radius: 12px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.15s, box-shadow 0.2s;
+  }
+  .submit-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--electric);
+    transform: translateX(-100%);
+    transition: transform 0.35s cubic-bezier(0.65,0,0.35,1);
+  }
+  .submit-btn:hover::before { transform: translateX(0); }
+  .submit-btn:hover { box-shadow: 0 8px 28px rgba(255,61,0,0.35); transform: translateY(-1px); }
+  .submit-btn:active { transform: translateY(0); }
+  .submit-btn span { position: relative; z-index: 1; }
+
+  .success-overlay {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 40px 0;
+  }
+  .success-circle {
+    width: 80px; height: 80px;
+    background: var(--electric);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 36px;
+    color: var(--white);
+    margin-bottom: 24px;
+    animation: pop 0.5s cubic-bezier(0.34,1.56,0.64,1) both;
+  }
+  @keyframes pop {
+    from { transform: scale(0); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+  .success-overlay h2 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800; font-size: 28px; letter-spacing: -1px;
+    margin-bottom: 10px;
+  }
+  .success-overlay p { font-size: 14px; color: var(--muted); line-height: 1.6; }
+
+  .signin-link { text-align: center; margin-top: 20px; font-size: 13px; color: var(--muted); }
+  .signin-link a { color: var(--ink); font-weight: 600; text-decoration: none; border-bottom: 1.5px solid var(--ink); padding-bottom: 1px; }
+
+  @media (max-width: 768px) {
+    .wrapper { grid-template-columns: 1fr; }
+    .left { display: none; }
+    .right { padding: 32px 24px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="blob blob-1"></div>
+<div class="blob blob-2"></div>
+<div class="blob blob-3"></div>
+
+<div class="wrapper">
+  <div class="left">
+    <div class="brand">
+      <span class="brand-dot"></span>
+      NEXUS
+    </div>
+    <div class="left-hero">
+      <h2>Build<br/>something<br/><span>great.</span></h2>
+      <p>Join thousands of creators, developers, and businesses shaping the future — one project at a time.</p>
+    </div>
+    <div class="perks">
+      <div class="perk">
+        <div class="perk-icon" style="background:rgba(255,61,0,0.15);">⚡</div>
+        <div class="perk-text"><strong>Lightning fast setup</strong>Up and running in under 60 seconds</div>
+      </div>
+      <div class="perk">
+        <div class="perk-icon" style="background:rgba(255,184,0,0.15);">🔒</div>
+        <div class="perk-text"><strong>Enterprise-grade security</strong>Your data is encrypted end-to-end</div>
+      </div>
+      <div class="perk">
+        <div class="perk-icon" style="background:rgba(108,0,255,0.15);">🌍</div>
+        <div class="perk-text"><strong>Global community</strong>100K+ members and growing daily</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="right">
+    <div class="form-box">
+      <div id="formContent">
+        <div class="form-header">
+          <h1>Create your<br/><em>account.</em></h1>
+          <p>Free forever. No credit card required.</p>
+        </div>
+
+        <div class="socials">
+          <button class="social-btn">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+            Google
+          </button>
+          <button class="social-btn">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+            GitHub
+          </button>
+        </div>
+
+        <div class="divider">or continue with email</div>
+
+        <form id="signupForm" onsubmit="handleSubmit(event)">
+          <div class="fields">
+            <div class="row2">
+              <div class="field">
+                <label>First name</label>
+                <div class="input-wrap">
+                  <span class="ico">👤</span>
+                  <input type="text" placeholder="Ahmed" required />
+                </div>
+              </div>
+              <div class="field">
+                <label>Last name</label>
+                <div class="input-wrap">
+                  <span class="ico">👤</span>
+                  <input type="text" placeholder="Ali" required />
+                </div>
+              </div>
+            </div>
+            <div class="field">
+              <label>Email address</label>
+              <div class="input-wrap">
+                <span class="ico">✉️</span>
+                <input type="email" placeholder="ahmed@example.com" required />
+              </div>
+            </div>
+            <div class="field">
+              <label>Password</label>
+              <div class="input-wrap">
+                <span class="ico">🔑</span>
+                <input type="password" id="passField" placeholder="Min. 8 characters" oninput="updateStrength(this.value)" required />
+                <button type="button" class="eye-btn" onclick="togglePass()" id="eyeBtn">👁</button>
+              </div>
+              <div class="strength">
+                <div class="strength-bar"><div class="strength-fill" id="sbar"></div></div>
+                <div class="strength-label" id="slabel">Enter a password</div>
+              </div>
+            </div>
+          </div>
+
+          <label class="terms">
+            <input type="checkbox" id="termsCheck" required />
+            <span class="custom-check">
+              <svg viewBox="0 0 10 10" fill="none" stroke="white" stroke-width="2">
+                <polyline points="1.5,5 4,7.5 8.5,2.5"/>
+              </svg>
+            </span>
+            I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>
+          </label>
+
+          <button type="submit" class="submit-btn"><span>Create Account →</span></button>
+        </form>
+
+        <div class="signin-link">Already have an account? <a href="#">Sign in</a></div>
+      </div>
+
+      <div class="success-overlay" id="successState">
+        <div class="success-circle">✓</div>
+        <h2>You're in!</h2>
+        <p>Your account has been created successfully.<br/>Check your email to verify and get started.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function togglePass() {
+  const f = document.getElementById('passField');
+  const b = document.getElementById('eyeBtn');
+  f.type = f.type === 'password' ? 'text' : 'password';
+  b.textContent = f.type === 'password' ? '👁' : '🙈';
+}
+function updateStrength(val) {
+  const bar = document.getElementById('sbar');
+  const lbl = document.getElementById('slabel');
+  let score = 0;
+  if (val.length >= 8) score++;
+  if (/[A-Z]/.test(val)) score++;
+  if (/[0-9]/.test(val)) score++;
+  if (/[^A-Za-z0-9]/.test(val)) score++;
+  const cfg = [
+    { w: '0%', c: 'transparent', t: 'Enter a password' },
+    { w: '25%', c: '#E24B4A', t: 'Weak' },
+    { w: '50%', c: '#FFB800', t: 'Fair' },
+    { w: '75%', c: '#378ADD', t: 'Good' },
+    { w: '100%', c: '#3B6D11', t: 'Strong ✓' },
+  ][score];
+  bar.style.width = cfg.w;
+  bar.style.background = cfg.c;
+  lbl.textContent = cfg.t;
+  lbl.style.color = cfg.c === 'transparent' ? '#7A7880' : cfg.c;
+}
+function handleSubmit(e) {
+  e.preventDefault();
+  const fc = document.getElementById('formContent');
+  fc.style.opacity = '0';
+  fc.style.transition = 'opacity 0.3s';
+  setTimeout(() => {
+    fc.style.display = 'none';
+    const s = document.getElementById('successState');
+    s.style.display = 'flex';
+  }, 300);
+}
+document.querySelector('.terms').addEventListener('click', function(e) {
+  if (e.target.tagName === 'A') return;
+  const cb = document.getElementById('termsCheck');
+  cb.checked = !cb.checked;
+});
+</script>
+</body>
+</html>
