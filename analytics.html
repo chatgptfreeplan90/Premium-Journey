@@ -1,0 +1,571 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Analytics — NEXUS</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ink: #0A0A0F;
+    --cream: #F5F0E8;
+    --electric: #FF3D00;
+    --gold: #FFB800;
+    --violet: #6C00FF;
+    --teal: #00C896;
+    --white: #FFFFFF;
+    --muted: #7A7880;
+    --border: rgba(10,10,15,0.10);
+    --sidebar-w: 240px;
+  }
+
+  html, body { min-height: 100vh; font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--ink); overflow-x: hidden; }
+
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background-image:
+      linear-gradient(rgba(10,10,15,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(10,10,15,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none; z-index: 0;
+  }
+
+  .blob { position: fixed; border-radius: 50%; filter: blur(90px); opacity: 0.15; pointer-events: none; z-index: 0; }
+  .blob-1 { width: 500px; height: 500px; background: var(--electric); top: -100px; right: -80px; }
+  .blob-2 { width: 400px; height: 400px; background: var(--violet); bottom: -80px; left: 200px; }
+  .blob-3 { width: 280px; height: 280px; background: var(--gold); top: 50%; left: 45%; }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    position: fixed; top: 0; left: 0; bottom: 0;
+    width: var(--sidebar-w);
+    background: var(--ink);
+    display: flex; flex-direction: column;
+    z-index: 100; overflow: hidden;
+  }
+  .sidebar::after {
+    content: ''; position: absolute; inset: 0;
+    background: repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(255,255,255,0.015) 2px, rgba(255,255,255,0.015) 4px);
+    pointer-events: none;
+  }
+  .sidebar-brand {
+    padding: 28px 24px 24px;
+    font-family: 'Syne', sans-serif; font-weight: 800; font-size: 20px;
+    color: var(--white); display: flex; align-items: center; gap: 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+  }
+  .brand-dot { width: 9px; height: 9px; background: var(--electric); border-radius: 50%; animation: pulse 2s ease-in-out infinite; flex-shrink: 0; }
+  @keyframes pulse { 0%,100%{transform:scale(1);opacity:1;} 50%{transform:scale(1.5);opacity:0.5;} }
+
+  .sidebar-nav { flex: 1; padding: 20px 12px; display: flex; flex-direction: column; gap: 4px; position: relative; z-index: 1; }
+  .nav-section-label { font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,0.25); padding: 12px 12px 6px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 12px; border-radius: 10px;
+    font-size: 14px; color: rgba(255,255,255,0.5);
+    cursor: pointer; transition: all 0.2s; text-decoration: none;
+  }
+  .nav-item:hover { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.85); }
+  .nav-item.active { background: var(--electric); color: var(--white); font-weight: 500; }
+  .nav-item .nav-icon { font-size: 17px; width: 20px; text-align: center; flex-shrink: 0; }
+  .nav-badge { margin-left: auto; font-size: 10px; font-weight: 600; background: var(--gold); color: var(--ink); padding: 2px 7px; border-radius: 10px; }
+
+  .sidebar-footer { padding: 16px 12px; border-top: 1px solid rgba(255,255,255,0.07); position: relative; z-index: 1; }
+  .user-card { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; background: rgba(255,255,255,0.05); cursor: pointer; transition: background 0.2s; }
+  .user-card:hover { background: rgba(255,255,255,0.09); }
+  .user-avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--electric); display: flex; align-items: center; justify-content: center; font-family: 'Syne', sans-serif; font-weight: 800; font-size: 13px; color: var(--white); flex-shrink: 0; }
+  .user-info { flex: 1; min-width: 0; }
+  .user-name { font-size: 13px; font-weight: 500; color: var(--white); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .user-role { font-size: 11px; color: rgba(255,255,255,0.35); }
+
+  /* ── Main ── */
+  .main { margin-left: var(--sidebar-w); min-height: 100vh; position: relative; z-index: 1; }
+
+  .topbar {
+    position: sticky; top: 0;
+    background: rgba(245,240,232,0.85); backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px; height: 64px;
+    display: flex; align-items: center; justify-content: space-between;
+    z-index: 50;
+  }
+  .topbar-left h1 { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 20px; letter-spacing: -0.5px; }
+  .topbar-left p { font-size: 12px; color: var(--muted); }
+  .topbar-right { display: flex; align-items: center; gap: 10px; }
+
+  .tab-group { display: flex; background: var(--white); border: 1.5px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .tab-btn { padding: 7px 16px; font-size: 12px; font-weight: 500; font-family: 'DM Sans', sans-serif; border: none; background: none; cursor: pointer; color: var(--muted); transition: all 0.2s; }
+  .tab-btn.active { background: var(--ink); color: var(--white); }
+
+  .top-btn { width: 38px; height: 38px; border-radius: 10px; border: 1.5px solid var(--border); background: var(--white); display: flex; align-items: center; justify-content: center; font-size: 16px; cursor: pointer; transition: all 0.2s; position: relative; }
+  .top-btn:hover { border-color: var(--ink); }
+  .notif-dot { position: absolute; top: 6px; right: 6px; width: 7px; height: 7px; background: var(--electric); border-radius: 50%; border: 1.5px solid var(--cream); }
+
+  /* ── Content ── */
+  .content { padding: 28px 32px; }
+
+  @keyframes fadeUp { from{opacity:0;transform:translateY(16px);} to{opacity:1;transform:translateY(0);} }
+
+  /* ── KPI strip ── */
+  .kpi-strip { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-bottom: 24px; }
+  .kpi {
+    background: var(--white); border: 1px solid var(--border); border-radius: 14px;
+    padding: 16px 18px; position: relative; overflow: hidden;
+    animation: fadeUp 0.5s ease both;
+  }
+  .kpi:nth-child(2){animation-delay:.07s} .kpi:nth-child(3){animation-delay:.14s}
+  .kpi:nth-child(4){animation-delay:.21s} .kpi:nth-child(5){animation-delay:.28s}
+  .kpi-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); font-weight: 500; margin-bottom: 8px; }
+  .kpi-val { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 24px; letter-spacing: -1px; color: var(--ink); margin-bottom: 4px; }
+  .kpi-sub { font-size: 11px; }
+  .kpi-sub.up { color: #3B6D11; } .kpi-sub.down { color: #A32D2D; }
+  .kpi-bar { position: absolute; bottom: 0; left: 0; right: 0; height: 3px; }
+
+  /* ── Main chart area ── */
+  .chart-section { background: var(--white); border: 1px solid var(--border); border-radius: 16px; padding: 24px; margin-bottom: 24px; animation: fadeUp 0.5s ease 0.3s both; }
+  .chart-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
+  .chart-title { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 17px; letter-spacing: -0.4px; }
+  .chart-subtitle { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .chart-controls { display: flex; align-items: center; gap: 10px; }
+  .legend-pill { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+  .legend-line { width: 20px; height: 3px; border-radius: 2px; }
+
+  /* SVG line chart */
+  .line-chart-wrap { position: relative; }
+  .chart-yaxis { position: absolute; left: 0; top: 0; bottom: 28px; display: flex; flex-direction: column; justify-content: space-between; }
+  .chart-yaxis span { font-size: 10px; color: var(--muted); }
+  .chart-svg-wrap { padding-left: 36px; }
+  .chart-xaxis { padding-left: 36px; display: flex; justify-content: space-between; margin-top: 6px; }
+  .chart-xaxis span { font-size: 10px; color: var(--muted); }
+
+  /* ── 3-col row ── */
+  .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+
+  .panel { background: var(--white); border: 1px solid var(--border); border-radius: 16px; padding: 20px 22px; animation: fadeUp 0.5s ease 0.35s both; }
+  .panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+  .panel-title { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 14px; letter-spacing: -0.3px; }
+  .panel-action { font-size: 12px; color: var(--electric); font-weight: 500; cursor: pointer; border: none; background: none; padding: 0; }
+
+  /* Horizontal bar */
+  .hbar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .hbar-row:last-child { margin-bottom: 0; }
+  .hbar-label { font-size: 12px; color: var(--ink); width: 70px; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hbar-bg { flex: 1; height: 8px; background: rgba(10,10,15,0.06); border-radius: 4px; overflow: hidden; }
+  .hbar-fill { height: 100%; border-radius: 4px; transition: width 1s cubic-bezier(0.34,1.2,0.64,1); }
+  .hbar-val { font-size: 12px; color: var(--muted); width: 40px; text-align: right; flex-shrink: 0; }
+
+  /* Funnel */
+  .funnel { display: flex; flex-direction: column; gap: 8px; }
+  .funnel-step { position: relative; border-radius: 8px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; }
+  .funnel-name { font-size: 13px; color: var(--white); font-weight: 500; }
+  .funnel-num { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 15px; color: var(--white); }
+  .funnel-pct { font-size: 10px; color: rgba(255,255,255,0.65); }
+
+  /* Geo table */
+  .geo-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--border); }
+  .geo-row:last-child { border-bottom: none; padding-bottom: 0; }
+  .geo-flag { font-size: 18px; width: 24px; text-align: center; flex-shrink: 0; }
+  .geo-country { flex: 1; font-size: 13px; color: var(--ink); }
+  .geo-bar-bg { width: 80px; height: 6px; background: rgba(10,10,15,0.06); border-radius: 3px; overflow: hidden; }
+  .geo-bar-fill { height: 100%; border-radius: 3px; background: var(--electric); }
+  .geo-pct { font-size: 12px; color: var(--muted); width: 36px; text-align: right; }
+
+  /* ── Bottom row ── */
+  .bottom-row { display: grid; grid-template-columns: 1.6fr 1fr; gap: 16px; }
+
+  /* Events table */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th { text-align: left; padding: 0 0 12px; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); border-bottom: 1px solid var(--border); }
+  tbody tr { border-bottom: 1px solid var(--border); transition: background 0.15s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: rgba(10,10,15,0.02); }
+  tbody td { padding: 11px 0; color: var(--ink); vertical-align: middle; }
+  .evt-icon { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
+  .trend-spark { display: inline-flex; align-items: flex-end; gap: 2px; height: 20px; }
+  .spark-bar { width: 4px; border-radius: 2px; }
+
+  /* Realtime panel */
+  .realtime-num { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 44px; letter-spacing: -2px; color: var(--ink); text-align: center; margin: 16px 0 4px; }
+  .realtime-sub { text-align: center; font-size: 12px; color: var(--muted); margin-bottom: 20px; }
+  .pulse-ring { width: 12px; height: 12px; border-radius: 50%; background: var(--teal); display: inline-block; position: relative; margin-right: 6px; }
+  .pulse-ring::after { content: ''; position: absolute; inset: -4px; border-radius: 50%; border: 2px solid var(--teal); animation: ring 1.5s ease-out infinite; }
+  @keyframes ring { 0%{transform:scale(0.8);opacity:1;} 100%{transform:scale(2);opacity:0;} }
+  .rt-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .rt-row:last-child { border-bottom: none; }
+  .rt-label { color: var(--muted); }
+  .rt-val { font-weight: 500; color: var(--ink); }
+
+  /* ── Responsive ── */
+  @media (max-width: 1200px) { .kpi-strip { grid-template-columns: repeat(3,1fr); } .three-col { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 900px) { .bottom-row { grid-template-columns: 1fr; } }
+  @media (max-width: 768px) {
+    :root { --sidebar-w: 0px; }
+    .sidebar { display: none; }
+    .main { margin-left: 0; }
+    .topbar, .content { padding-left: 16px; padding-right: 16px; }
+    .kpi-strip { grid-template-columns: repeat(2,1fr); }
+    .three-col { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="blob blob-1"></div>
+<div class="blob blob-2"></div>
+<div class="blob blob-3"></div>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-brand"><span class="brand-dot"></span>NEXUS</div>
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Main</div>
+    <a class="nav-item" href="#">⊞ &nbsp;Dashboard</a>
+    <a class="nav-item active" href="#">📊 &nbsp;Analytics</a>
+    <a class="nav-item" href="#">👥 &nbsp;Users <span class="nav-badge">12</span></a>
+    <a class="nav-item" href="#">📁 &nbsp;Projects</a>
+    <div class="nav-section-label" style="margin-top:8px;">Workspace</div>
+    <a class="nav-item" href="#">✉️ &nbsp;Messages <span class="nav-badge">5</span></a>
+    <a class="nav-item" href="#">📅 &nbsp;Calendar</a>
+    <a class="nav-item" href="#">🔔 &nbsp;Notifications</a>
+    <div class="nav-section-label" style="margin-top:8px;">Settings</div>
+    <a class="nav-item" href="#">⚙️ &nbsp;Settings</a>
+    <a class="nav-item" href="#">🔒 &nbsp;Security</a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="user-card">
+      <div class="user-avatar">AA</div>
+      <div class="user-info"><div class="user-name">Ahmed Ali</div><div class="user-role">Admin</div></div>
+      <span style="color:rgba(255,255,255,0.3);font-size:12px;">⌄</span>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+
+  <div class="topbar">
+    <div class="topbar-left">
+      <h1>Analytics</h1>
+      <p>Tuesday, 19 May 2026 — Real-time data</p>
+    </div>
+    <div class="topbar-right">
+      <div class="tab-group">
+        <button class="tab-btn" onclick="setRange(this,'7d')">7D</button>
+        <button class="tab-btn active" onclick="setRange(this,'30d')">30D</button>
+        <button class="tab-btn" onclick="setRange(this,'90d')">90D</button>
+        <button class="tab-btn" onclick="setRange(this,'1y')">1Y</button>
+      </div>
+      <div class="top-btn">⬇️</div>
+      <div class="top-btn">🔔<span class="notif-dot"></span></div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- KPI Strip -->
+    <div class="kpi-strip">
+      <div class="kpi">
+        <div class="kpi-label">Page Views</div>
+        <div class="kpi-val">284K</div>
+        <div class="kpi-sub up">↑ 18.4% vs last period</div>
+        <div class="kpi-bar" style="background:var(--electric)"></div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Unique Visitors</div>
+        <div class="kpi-val">91.2K</div>
+        <div class="kpi-sub up">↑ 12.1% vs last period</div>
+        <div class="kpi-bar" style="background:var(--gold)"></div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Bounce Rate</div>
+        <div class="kpi-val">34.8%</div>
+        <div class="kpi-sub up">↓ 3.2% improvement</div>
+        <div class="kpi-bar" style="background:var(--violet)"></div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Avg. Session</div>
+        <div class="kpi-val">4m 22s</div>
+        <div class="kpi-sub up">↑ 0m 41s longer</div>
+        <div class="kpi-bar" style="background:var(--teal)"></div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Conversion</div>
+        <div class="kpi-val">6.74%</div>
+        <div class="kpi-sub down">↓ 0.5% vs last period</div>
+        <div class="kpi-bar" style="background:#FF3D00"></div>
+      </div>
+    </div>
+
+    <!-- Main Line Chart -->
+    <div class="chart-section">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Traffic Overview</div>
+          <div class="chart-subtitle">Page views & unique visitors over the last 30 days</div>
+        </div>
+        <div class="chart-controls">
+          <div class="legend-pill"><div class="legend-line" style="background:var(--electric)"></div>Page Views</div>
+          <div class="legend-pill"><div class="legend-line" style="background:var(--violet)"></div>Visitors</div>
+          <div class="legend-pill"><div class="legend-line" style="background:var(--gold); border-top: 2px dashed var(--gold); background: none; height:0;"></div>Revenue</div>
+        </div>
+      </div>
+      <div class="line-chart-wrap">
+        <div class="chart-yaxis" id="yaxis"></div>
+        <div class="chart-svg-wrap">
+          <svg id="lineChart" width="100%" height="200" viewBox="0 0 700 200" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#FF3D00" stop-opacity="0.18"/>
+                <stop offset="100%" stop-color="#FF3D00" stop-opacity="0"/>
+              </linearGradient>
+              <linearGradient id="g2" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#6C00FF" stop-opacity="0.12"/>
+                <stop offset="100%" stop-color="#6C00FF" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <!-- grid lines -->
+            <line x1="0" y1="0" x2="700" y2="0" stroke="rgba(10,10,15,0.06)" stroke-width="1"/>
+            <line x1="0" y1="50" x2="700" y2="50" stroke="rgba(10,10,15,0.06)" stroke-width="1"/>
+            <line x1="0" y1="100" x2="700" y2="100" stroke="rgba(10,10,15,0.06)" stroke-width="1"/>
+            <line x1="0" y1="150" x2="700" y2="150" stroke="rgba(10,10,15,0.06)" stroke-width="1"/>
+            <line x1="0" y1="200" x2="700" y2="200" stroke="rgba(10,10,15,0.06)" stroke-width="1"/>
+            <!-- area fills -->
+            <path id="area1" fill="url(#g1)"/>
+            <path id="area2" fill="url(#g2)"/>
+            <!-- lines -->
+            <path id="line1" fill="none" stroke="#FF3D00" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path id="line2" fill="none" stroke="#6C00FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="5 3"/>
+            <!-- tooltip dot -->
+            <circle id="dot" r="5" fill="#FF3D00" stroke="white" stroke-width="2" opacity="0"/>
+          </svg>
+        </div>
+        <div class="chart-xaxis" id="xaxis"></div>
+      </div>
+    </div>
+
+    <!-- Three column row -->
+    <div class="three-col">
+
+      <!-- Top Pages -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Top Pages</span>
+          <button class="panel-action">Export →</button>
+        </div>
+        <div id="topPages"></div>
+      </div>
+
+      <!-- Conversion Funnel -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Conversion Funnel</span>
+        </div>
+        <div class="funnel" id="funnel"></div>
+      </div>
+
+      <!-- Geo -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Top Countries</span>
+          <button class="panel-action">Map view →</button>
+        </div>
+        <div id="geoList"></div>
+      </div>
+
+    </div>
+
+    <!-- Bottom row -->
+    <div class="bottom-row">
+
+      <!-- Events table -->
+      <div class="panel" style="animation-delay:0.4s">
+        <div class="panel-header">
+          <span class="panel-title">Top Events</span>
+          <button class="panel-action">See all →</button>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Event</th>
+              <th>Category</th>
+              <th>Count</th>
+              <th>Change</th>
+              <th>Trend</th>
+            </tr>
+          </thead>
+          <tbody id="eventsTable"></tbody>
+        </table>
+      </div>
+
+      <!-- Realtime -->
+      <div class="panel" style="animation-delay:0.45s">
+        <div class="panel-header">
+          <span class="panel-title"><span class="pulse-ring"></span>Real-time</span>
+        </div>
+        <div class="realtime-num" id="rtNum">247</div>
+        <div class="realtime-sub">Active users right now</div>
+        <div class="rt-row"><span class="rt-label">Top page</span><span class="rt-val">/dashboard</span></div>
+        <div class="rt-row"><span class="rt-label">Top country</span><span class="rt-val">🇵🇰 Pakistan</span></div>
+        <div class="rt-row"><span class="rt-label">Top source</span><span class="rt-val">Google</span></div>
+        <div class="rt-row"><span class="rt-label">New sessions</span><span class="rt-val" id="rtSessions">84/min</span></div>
+        <div class="rt-row"><span class="rt-label">Avg. load time</span><span class="rt-val">1.2s</span></div>
+        <div class="rt-row"><span class="rt-label">Error rate</span><span class="rt-val" style="color:#3B6D11">0.3%</span></div>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<script>
+// ── Line chart data ──
+const labels = ['1 Apr','5 Apr','10 Apr','15 Apr','20 Apr','25 Apr','30 Apr','5 May','10 May','15 May','19 May'];
+const views   = [3800,4200,3600,5100,4800,6200,5800,7100,6600,8400,9100];
+const visitors= [2100,2400,2000,2900,2700,3500,3200,4000,3700,4800,5200];
+
+function buildChart() {
+  const W = 700, H = 200;
+  const maxV = Math.max(...views) * 1.1;
+  const pts1 = views.map((v,i) => [i/(views.length-1)*W, H - (v/maxV)*H]);
+  const pts2 = visitors.map((v,i) => [i/(visitors.length-1)*W, H - (v/maxV)*H]);
+
+  function smooth(pts) {
+    let d = `M${pts[0][0]},${pts[0][1]}`;
+    for(let i=0;i<pts.length-1;i++){
+      const cx=(pts[i][0]+pts[i+1][0])/2;
+      d+=` C${cx},${pts[i][1]} ${cx},${pts[i+1][1]} ${pts[i+1][0]},${pts[i+1][1]}`;
+    }
+    return d;
+  }
+
+  const l1 = smooth(pts1), l2 = smooth(pts2);
+  document.getElementById('line1').setAttribute('d', l1);
+  document.getElementById('line2').setAttribute('d', l2);
+  document.getElementById('area1').setAttribute('d', l1 + ` L${W},${H} L0,${H} Z`);
+  document.getElementById('area2').setAttribute('d', l2 + ` L${W},${H} L0,${H} Z`);
+
+  // x-axis
+  const xa = document.getElementById('xaxis');
+  labels.forEach(l => { const s=document.createElement('span'); s.textContent=l; xa.appendChild(s); });
+
+  // y-axis
+  const ya = document.getElementById('yaxis');
+  [9000,6750,4500,2250,0].forEach(v => { const s=document.createElement('span'); s.textContent=v>=1000?Math.round(v/1000)+'K':v; ya.appendChild(s); });
+}
+buildChart();
+
+// ── Top Pages ──
+const pages = [
+  {name:'/dashboard', views:'42,100', pct:72},
+  {name:'/analytics', views:'18,400', pct:48},
+  {name:'/users',     views:'12,900', pct:34},
+  {name:'/projects',  views:'9,300',  pct:24},
+  {name:'/settings',  views:'4,100',  pct:11},
+];
+const colors = ['#FF3D00','#FFB800','#6C00FF','#00C896','#7A7880'];
+const tp = document.getElementById('topPages');
+pages.forEach((p,i) => {
+  tp.innerHTML += `<div class="hbar-row">
+    <span class="hbar-label">${p.name}</span>
+    <div class="hbar-bg"><div class="hbar-fill" style="width:0%;background:${colors[i]}" data-w="${p.pct}"></div></div>
+    <span class="hbar-val">${p.views}</span>
+  </div>`;
+});
+setTimeout(() => {
+  document.querySelectorAll('.hbar-fill').forEach(el => el.style.width = el.dataset.w + '%');
+}, 200);
+
+// ── Funnel ──
+const funnel = [
+  {label:'Visitors',  n:'91,200', pct:100, bg:'#0A0A0F'},
+  {label:'Sign-ups',  n:'18,400', pct:20,  bg:'#FF3D00'},
+  {label:'Activated', n:'9,100',  pct:10,  bg:'#6C00FF'},
+  {label:'Converted', n:'6,150',  pct:6.7, bg:'#FFB800'},
+];
+const fEl = document.getElementById('funnel');
+funnel.forEach((f,i) => {
+  const w = 100 - i*12;
+  fEl.innerHTML += `<div class="funnel-step" style="background:${f.bg};width:${w}%;margin:0 auto;">
+    <span class="funnel-name">${f.label}</span>
+    <div style="text-align:right;">
+      <div class="funnel-num">${f.n}</div>
+      <div class="funnel-pct">${f.pct}%</div>
+    </div>
+  </div>`;
+});
+
+// ── Geo ──
+const geo = [
+  {flag:'🇵🇰', country:'Pakistan',      pct:38},
+  {flag:'🇺🇸', country:'United States', pct:24},
+  {flag:'🇬🇧', country:'United Kingdom',pct:14},
+  {flag:'🇦🇪', country:'UAE',           pct:10},
+  {flag:'🇩🇪', country:'Germany',       pct:7},
+  {flag:'🇨🇦', country:'Canada',        pct:7},
+];
+const gl = document.getElementById('geoList');
+geo.forEach(g => {
+  gl.innerHTML += `<div class="geo-row">
+    <span class="geo-flag">${g.flag}</span>
+    <span class="geo-country">${g.country}</span>
+    <div class="geo-bar-bg"><div class="geo-bar-fill" style="width:${g.pct}%"></div></div>
+    <span class="geo-pct">${g.pct}%</span>
+  </div>`;
+});
+
+// ── Events table ──
+const events = [
+  {icon:'🖱️', bg:'rgba(255,61,0,0.1)',   name:'Button Click',    cat:'UI',          count:'84,200', change:'+22%', spark:[3,5,4,7,6,8,9]},
+  {icon:'📝', bg:'rgba(108,0,255,0.1)',   name:'Form Submit',     cat:'Conversion',  count:'18,400', change:'+14%', spark:[4,4,5,5,6,7,8]},
+  {icon:'🔍', bg:'rgba(255,184,0,0.1)',   name:'Search Used',     cat:'Navigation',  count:'12,100', change:'+8%',  spark:[2,3,3,4,3,5,4]},
+  {icon:'⬇️', bg:'rgba(0,200,150,0.1)',  name:'PDF Download',    cat:'Content',     count:'6,800',  change:'-3%',  spark:[6,5,4,5,4,3,3]},
+  {icon:'📤', bg:'rgba(255,61,0,0.1)',   name:'Share Click',     cat:'Social',      count:'3,400',  change:'+31%', spark:[1,2,2,3,4,5,6]},
+];
+const et = document.getElementById('eventsTable');
+events.forEach(e => {
+  const sparkHTML = e.spark.map((v,i) =>
+    `<div class="spark-bar" style="height:${v*3}px;background:${v===Math.max(...e.spark)?'#FF3D00':'rgba(10,10,15,0.15)'}"></div>`
+  ).join('');
+  const up = e.change.startsWith('+');
+  et.innerHTML += `<tr>
+    <td><div style="display:flex;align-items:center;gap:10px;">
+      <div class="evt-icon" style="background:${e.bg}">${e.icon}</div>
+      <span style="font-weight:500">${e.name}</span>
+    </div></td>
+    <td style="color:var(--muted)">${e.cat}</td>
+    <td style="font-weight:500">${e.count}</td>
+    <td style="color:${up?'#3B6D11':'#A32D2D'};font-weight:500">${e.change}</td>
+    <td><div class="trend-spark">${sparkHTML}</div></td>
+  </tr>`;
+});
+
+// ── Realtime counter ──
+let rt = 247;
+setInterval(() => {
+  rt += Math.floor(Math.random()*7) - 3;
+  rt = Math.max(180, Math.min(350, rt));
+  document.getElementById('rtNum').textContent = rt;
+  const spm = Math.floor(rt * 0.34);
+  document.getElementById('rtSessions').textContent = spm + '/min';
+}, 2000);
+
+// ── Tab switcher ──
+function setRange(btn, range) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+// ── Nav active ──
+document.querySelectorAll('.nav-item').forEach(el => {
+  el.addEventListener('click', function(e) {
+    e.preventDefault();
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+</script>
+</body>
+</html>
+```
